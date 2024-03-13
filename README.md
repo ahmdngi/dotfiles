@@ -1,5 +1,6 @@
 #inspired by https://news.ycombinator.com/item?id=11070797
 to setup the directory from the machine terminal
+
  - config add .zshrc
  - config commit -m "add zshrc"
  - cd .myconf
