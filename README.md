@@ -9,3 +9,5 @@
 - git push -u origin main
 
 #u have to point in config alias .git location
+#git commit -m "readme" README.md 
+
