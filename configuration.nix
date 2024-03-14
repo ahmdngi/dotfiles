@@ -4,6 +4,7 @@
 
 { config, pkgs, ... }:
 
+
 {
   imports =
     [ # Include the results of the hardware scan.
@@ -80,7 +81,6 @@
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
-
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.ahmed = {
     isNormalUser = true;
@@ -137,7 +137,18 @@
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
   #zsh setting
-  programs.zsh.enable = true;
+  programs.zsh = {
+    enable = true;
+    #ohMyZsh = {
+    #    enable = true;
+        #plugins = [ "git" 
+	#	    "zsh-autosuggestions"
+	#	    "zsh-completions"
+    	#            "zsh-fzf-history-search" 
+	#	    "zsh-history-substring-search" 
+	#];
+    #};
+  };   
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
