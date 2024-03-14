@@ -122,6 +122,7 @@
     gh #use gh auth login
     fzf
     appimagekit
+    etcher
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
