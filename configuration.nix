@@ -121,12 +121,11 @@
     gh #use gh auth login
     fzf
     appimagekit
-<<<<<<< Updated upstream
     etcher
-=======
     mendeley
     openfortivpn
->>>>>>> Stashed changes
+    mendeley
+    openfortivpn
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
