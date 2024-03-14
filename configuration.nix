@@ -4,7 +4,6 @@
 
 { config, pkgs, ... }:
 
-
 {
   imports =
     [ # Include the results of the hardware scan.
@@ -122,7 +121,12 @@
     gh #use gh auth login
     fzf
     appimagekit
+<<<<<<< Updated upstream
     etcher
+=======
+    mendeley
+    openfortivpn
+>>>>>>> Stashed changes
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -145,7 +149,7 @@
         #plugins = [ "git" 
 	#	    "zsh-autosuggestions"
 	#	    "zsh-completions"
-    	#            "zsh-fzf-history-search" 
+    	#           "zsh-fzf-history-search" 
 	#	    "zsh-history-substring-search" 
 	#];
     #};
