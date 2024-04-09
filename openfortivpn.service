@@ -1,0 +1,57 @@
+#cat /etc/systemd/system/openfortivpn.service
+#config file is in /etc/openfortivpn/config
+#you can add alias in .bashrc >> alias vu='sudo systemctl start openfortivpn' and alias vd='sudo systemctl stop openfortivpn'
+[Unit]
+Description=OpenFortiVPN Client
+After=network.target
+Wants=network-online.target
+
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+Documentation=man:openfortivpn(1)
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/openfortivpn --persistent=5
+Restart=on-failure
+RestartSec=5s
+
+DeviceAllow=/dev/ppp
+ReadWritePaths=/var/run
+
+# security and hardening options for systemd service units
+# https://gist.github.com/ageis/f5595e59b1cddb1513d1b425a323db04
+
+PrivateTmp=yes
+DevicePolicy=closed
+
+#~ TODO:
+#~ DynamicUser=yes
+#~ PrivateUsers=yes
+#~ PrivateDevices=yes
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectHostname=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+
+# Newer systemd versions allow:
+#~ ProtectKernelLogs=yes
+#~ ProtectClock=yes
+
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+MemoryDenyWriteExecute=yes
+LockPersonality=yes
+
+# SIOCSIFADDR SIOCSIFFLAGS SIOCSIFMTU
+SystemCallFilter=@system-service @network-io
+
+[Install]
+WantedBy=multi-user.target
