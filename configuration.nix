@@ -9,24 +9,54 @@
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
+################################################
+###                                          ###
+### HARDWARE                                 ###
+###                                          ###
+################################################
+  # Enable bluetooth
+  hardware.bluetooth.enable = true; # enables support for Bluetooth
+  hardware.bluetooth.powerOnBoot = true; # powers up the default Bluetooth controller on boot
+  # Home partition
+  fileSystems."/home" = {
+     device = "/dev/disk/by-uuid/414ec555-9de5-4c46-983b-fea85995ede4";
+     fsType = "ext4";
+        };
+  # Bootloader
+  # look into efibootmgr if you face any trouble
+  boot.loader = {
+    timeout = 5;
+    grub = {
+      enable = true;
+      useOSProber = true;
+      efiSupport = true;
+      efiInstallAsRemovable = true; # Otherwise /boot/EFI/BOOT/BOOTX64.EFI isn't generated
+      devices = [ "nodev" ];
+      extraEntriesBeforeNixOS = false;
+      extraEntries = ''
+        menuentry "Reboot" {
+          reboot
+        }
+        menuentry "Poweroff" {
+          halt
+        }
+      '';
+    };
+  };
 
-  # Bootloader.
-  #boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.grub.enable = true;
-  boot.loader.grub.devices = [ "nodev" ];
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.useOSProber = true;
-  networking.hostName = "overwatch"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+################################################
+###                                          ###
+### VIRTUALISATION                           ###
+###                                          ###
+################################################
+  #virtualisation = {
+  #vmware.host.enable = true;
+  #virtualbox.host.enable = true;
+  #virtualbox.host.enableExtensionPack = true;
+  #};
+  boot.kernelParams = [ "kvm.enable_virt_at_load=0" ];
 
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
-  # Enable networking
-  networking.networkmanager.enable = true;
-
+###############################################
   # Set your time zone.
   time.timeZone = "Europe/Tallinn";
 
@@ -34,69 +64,41 @@
   i18n.defaultLocale = "en_US.UTF-8";
 
   i18n.extraLocaleSettings = {
-    LC_ADDRESS = "et_EE.UTF-8";
-    LC_IDENTIFICATION = "et_EE.UTF-8";
-    LC_MEASUREMENT = "et_EE.UTF-8";
-    LC_MONETARY = "et_EE.UTF-8";
-    LC_NAME = "et_EE.UTF-8";
-    LC_NUMERIC = "et_EE.UTF-8";
-    LC_PAPER = "et_EE.UTF-8";
-    LC_TELEPHONE = "et_EE.UTF-8";
-    LC_TIME = "et_EE.UTF-8";
+    LC_ADDRESS = "en_US.UTF-8";
+    LC_IDENTIFICATION = "en_US.UTF-8";
+    LC_MEASUREMENT = "en_US.UTF-8";
+    LC_MONETARY = "en_US.UTF-8";
+    LC_NAME = "en_US.UTF-8";
+    LC_NUMERIC = "en_US.UTF-8";
+    LC_PAPER = "en_US.UTF-8";
+    LC_TELEPHONE = "en_US.UTF-8";
+    LC_TIME = "en_US.UTF-8";
   };
-
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
+################################################
+###                                          ###
+### WINDOW MANAGER SETTINGS/WAYLAND/X11      ###
+###                                          ###
+################################################
 
   # Enable the KDE Plasma Desktop Environment.
-  services.xserver.displayManager.sddm.enable = true;
-  services.xserver.desktopManager.plasma5.enable = true;
-
-  # Configure keymap in X11
-  services.xserver = {
-    layout = "us";
-    xkbVariant = "";
-  };
-
-  # Enable CUPS to print documents.
-  services.printing.enable = true;
+  services.displayManager.sddm.enable = true;
+  services.desktopManager.plasma6.enable = true;
+###############################################
 
   # Enable sound with pipewire.
-  sound.enable = true;
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
   security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
 
-    # use the example session manager (no others are packaged yet so this is enabled by default,
-    # no need to redefine it in your config for now)
-    #media-session.enable = true;
-  };
-
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.ahmed = {
     isNormalUser = true;
     description = "ahmed";
-    extraGroups = [ "networkmanager" "wheel" ];
-    shell = pkgs.zsh;	
+    extraGroups = [ "vboxusers" "networkmanager" "wheel" "video" "input" "seat" ];
+    shell = pkgs.zsh;
     packages = with pkgs; [
-      firefox
-      kate
-      brave
-      neofetch
-      vlc
-      ranger
-      tmux
-    #  thunderbird
     ];
   };
+
   security.sudo.extraRules= [
     {  users = [ "ahmed" ];
       commands = [
@@ -106,65 +108,156 @@
       ];
     }
   ];
+
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
   # List packages installed in system profile. To search, run:
-  # $ nix search wget
   environment.systemPackages = with pkgs; [
     vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
-    alacritty
-    alacritty-theme
+    efibootmgr
+    wget
+    openfortivpn
     vscode
     git
     gh #use gh auth login
-    fzf
-    appimagekit
-    etcher
-    mendeley
-    openfortivpn
-    mendeley
-    openfortivpn
+    #fzf
+    popsicle
+    nethogs
+    flatpak #to install brave or other progs not supported in nixos
+    gnome-software # installation GUI
+    htop
+    vlc
+    ranger
+    tmux
+    gparted
+    mlocate
+    rar
+    mullvad-browser
+    #teams-for-linux
+    #virtualbox
+    tree
+    ######################################################
+    #nmap
+    #openvpn
+    #exploitdb
+    #metasploit
+    #seclists
+    #gobuster
+    #whatweb
+    #eyewitness 
+    #######################################################
+    neofetch
+    vault
+    ##tailscale-systray
+    ##heimdall-gui
+    ##onlyoffice-desktopeditors
+    #docker_28
+    qdigidoc
+    ##tigervnc
+    ##pciutils
+    ansible
+    ##sshpass
+    unzip
+    traceroute
+    ansible-lint
+    # user
+    starship
+    simplescreenrecorder
+    openfortivpn-webview
+    ##discord
+    ##telegram-desktop
+    #qbittorrent
+    #mendeley
+    calibre
+    qFlipper
+    #antigravity
+    flameshot
+    ##solaar
+    bitwarden-cli
+    dysk #df but better
+    tldr
+    tlrc # tldr in rust   
+    ##heimdall-gui
+    ##heimdall
+    #logiops
+    #rpi-imager
+    ethtool
+    #bandwhich
+    ##tailscale GUI
+    ##ktailctl
+    ## Install with flatpak
+    ##bitwarden-desktop
+    ##onlyoffice
+    ##msteams
+    ##brave
   ];
 
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
+################################################
+###                                          ###
+### Networking                               ###
+###                                          ###
+################################################
+  networking.hostName = "oversight"; # Define your hostname.
+  networking.nameservers = [ "100.100.100.100" "8.8.8.8" "1.1.1.1" ];
+  networking.search = [ "taila96b3.ts.net" ];
+  networking.networkmanager.enable = true;
+  networking.extraHosts =
+    ''
+      172.21.5.213 vault.hpclocal
+      193.40.242.157 vpn.taltech.ee
+    '';
 
-  # List services that you want to enable:
-  services.flatpak.enable = true;
-  # Enable the OpenSSH daemon.
-  services.openssh.enable = true;
-  #zsh setting
+  # the .pem file need to be moved to /etc/nixos
+  security.pki.certificateFiles = [ ./roots_hpclocal.pem ];
+##########################################################
+
+# PROGRAMS
   programs.zsh = {
     enable = true;
-    #ohMyZsh = {
-    #    enable = true;
-        #plugins = [ "git" 
-	#	    "zsh-autosuggestions"
-	#	    "zsh-completions"
-    	#           "zsh-fzf-history-search" 
-	#	    "zsh-history-substring-search" 
-	#];
-    #};
-  };   
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
+    enableCompletion = true;
+    syntaxHighlighting.enable = true;
+    shellAliases = {
+      ll = "ls -lart";
+      history="history 0";
+      update = "sudo nixos-rebuild switch";
+      config= "sudo vim /etc/nixos/configuration.nix";
+      ap="ansible-playbook -e \"ansible_user=ahmedn\" --ssh-common-args='-o ForwardAgent=yes -o ProxyCommand=\"ssh -W %h:%p base\"'";
+      vpn="bash /home/ahmed/vpn";
+      tailup="sudo tailscale up";
+      taildown="sudo tailscale down";
+  };
+   };   
+  programs.firefox.enable = true;
 
+
+# SERVICES 
+  services.tailscale.enable = true;
+  services.flatpak.enable = true;
+  services.openssh.enable = true;
+  services.rsyslogd.enable = true;
+  services.printing.enable = true;
+  services.xserver = {
+    enable = true;
+    videoDrivers = [ "intel" ];
+    xkb = {
+        layout = "us";
+        variant = "";
+    };
+  }; 
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+  };
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
   # on your system were taken. It‘s perfectly fine and recommended to leave
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "23.11"; # Did you read the comment?
+  system.stateVersion = "25.11"; # Did you read the comment?
 
 }
