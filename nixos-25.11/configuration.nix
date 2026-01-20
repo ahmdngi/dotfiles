@@ -4,16 +4,34 @@
 
 { config, pkgs, ... }:
 
+# Adding unstable
+# sudo nix-channel --add https://nixos.org/channels/nixos-unstable unstable
+# sudo nix-channel --update
+let
+  # 1. Define the unstable alias 
+  unstable = import <unstable> { 
+    config = config.nixpkgs.config; 
+  };
+in
 {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
+################################################
+###                                          ###
+### HARDWARE                                 ###
+###                                          ###
+################################################
+  # Enable bluetooth
+  hardware.bluetooth.enable = true; # enables support for Bluetooth
+  hardware.bluetooth.powerOnBoot = true; # powers up the default Bluetooth controller on boot
+  # Home partition
   fileSystems."/home" = {
      device = "/dev/disk/by-uuid/414ec555-9de5-4c46-983b-fea85995ede4";
      fsType = "ext4";
         };
-  # Bootloader.
+  # Bootloader
   # look into efibootmgr if you face any trouble
   boot.loader = {
     timeout = 5;
@@ -35,6 +53,17 @@
     };
   };
 
+# Point the actual hardware drivers to unstable Mesa to fix graphics regression
+  hardware.graphics = {
+    enable = true;
+    package = unstable.mesa;
+    
+    # recommended for Intel Xe (helps with Steam/Web Browsers)
+    enable32Bit = true;
+    package32 = unstable.pkgsi686Linux.mesa;
+  };
+
+  powerManagement.cpuFreqGovernor = "performance";
 ################################################
 ###                                          ###
 ### VIRTUALISATION                           ###
@@ -48,11 +77,6 @@
   boot.kernelParams = [ "kvm.enable_virt_at_load=0" ];
 
 ###############################################
-
-  # Enable bluetooth
-  hardware.bluetooth.enable = true; # enables support for Bluetooth
-  hardware.bluetooth.powerOnBoot = true; # powers up the default Bluetooth controller on boot
-
   # Set your time zone.
   time.timeZone = "Europe/Tallinn";
 
@@ -70,60 +94,20 @@
     LC_TELEPHONE = "en_US.UTF-8";
     LC_TIME = "en_US.UTF-8";
   };
-
-
 ################################################
 ###                                          ###
 ### WINDOW MANAGER SETTINGS/WAYLAND/X11      ###
 ###                                          ###
 ################################################
 
-  # Enable the X11 windowing system.
-  # You can disable this if you're only using the Wayland session.
-  #services.xserver.enable = true;
-  #services.xserver.videoDrivers = [ "intel" ];
   # Enable the KDE Plasma Desktop Environment.
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
-
-  # Configure keymap in X11
-  #services.xserver.xkb = {
-  #  layout = "us";
-  #  variant = "";
-  #};
-
-  services.xserver = {
-    enable = true;
-    videoDrivers = [ "intel" ];
-    xkb = {
-        layout = "us";
-        variant = "";
-    };
-  }; 
-
-################################################
-  # Enable CUPS to print documents.
-  services.printing.enable = true;
+###############################################
 
   # Enable sound with pipewire.
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
-
-    # use the example session manager (no others are packaged yet so this is enabled by default,
-    # no need to redefine it in your config for now)
-    #media-session.enable = true;
-  };
-
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
-
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.ahmed = {
@@ -147,15 +131,8 @@
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
-  # Allow unfree and unstable packages 
-  #nixpkgs = {
-  #  config = {
-  #  allowUnfree = true;
-  #  allowUnsupportedSystem = true;
-  #    };
 
   # List packages installed in system profile. To search, run:
-  # $ nix search wget
   environment.systemPackages = with pkgs; [
     vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
@@ -199,7 +176,8 @@
     #docker_28
     qdigidoc
     ##tigervnc
-    ##pciutils
+    pciutils
+    mesa-demos
     ansible
     ##sshpass
     unzip
@@ -235,15 +213,9 @@
     ##onlyoffice
     ##msteams
     ##brave
+    ### Unstable
+    #unstable.mesa
   ];
-
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
 
 ################################################
 ###                                          ###
@@ -260,34 +232,9 @@
       193.40.242.157 vpn.taltech.ee
     '';
 
-#########################################################Tailscale
-  
-#  # EXIT NODE SETUP
-#  boot.kernel.sysctl = {
-#    "net.ipv4.ip_forward" = 1;
-#    "net.ipv6.conf.all.forwarding" = 1;
-#  };
-# 
-#  systemd.services.enable-udp-gro = {
-#    description = "Enable UDP GRO forwarding";
-#    wantedBy = [ "multi-user.target" ];
-#    after = [ "network.target" ];
-#    path = with pkgs; [ iproute2 ethtool coreutils ]; 
-#    script = ''
-#      NETDEV=$(ip -o route get 8.8.8.8 | cut -f 5 -d " ")
-#      ${pkgs.ethtool}/bin/ethtool -K "$NETDEV" rx-udp-gro-forwarding on rx-gro-list off
-#       '';
-#    serviceConfig = {
-#      Type = "oneshot";
-#    };
-#  };
-
-############################################################################
-
-   # the .pem file need to be moved to /etc/nixos
-   security.pki.certificateFiles = [ ./roots_hpclocal.pem ];
-
-
+  # the .pem file need to be moved to /etc/nixos
+  security.pki.certificateFiles = [ ./roots_hpclocal.pem ];
+##########################################################
 
 # PROGRAMS
   programs.zsh = {
@@ -305,8 +252,6 @@
       taildown="sudo tailscale down";
   };
    };   
-
-  # Install firefox.
   programs.firefox.enable = true;
 
 
@@ -315,12 +260,21 @@
   services.flatpak.enable = true;
   services.openssh.enable = true;
   services.rsyslogd.enable = true;
-  #services.journald.extraConfig = "ForwardToSyslog=yes";
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
+  services.printing.enable = true;
+  services.xserver = {
+    enable = true;
+    videoDrivers = [ "modsetting" ];
+    xkb = {
+        layout = "us";
+        variant = "";
+    };
+  }; 
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+  };
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
